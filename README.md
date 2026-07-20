@@ -1,3 +1,8 @@
+---
+title: Business Verification Report
+permalink: /instructions/
+---
+
 # Business Verification Report — Field Data Collection MVP
 
 Mastercard Foundation Associate — Ghana

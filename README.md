@@ -2,44 +2,72 @@
 
 Mastercard Foundation Associate — Ghana
 
-Two files:
-- `index.html` — the field form (host this on GitHub Pages)
-- `code.gs` — the backend (paste into Google Apps Script)
+Repository files
+- `index.html` — the field form frontend (host this on GitHub Pages)
+- `README.md` — deployment and usage instructions
+- `code.gs` — backend script for Google Apps Script
 
-No manual Google Sheet or Drive folder setup needed — the script creates
-both automatically the first time it runs.
+The backend is bound to a specific Google Sheet and Drive folder **by ID**
+(set at the top of `code.gs`), so submissions always land in exactly those
+two places. If you leave the IDs blank it falls back to finding/creating them
+by name automatically.
 
 ---
 
 ## 1. Deploy the backend (code.gs)
 
 1. Go to [script.google.com/create](https://script.google.com/create) (use
-   the Google account you want the Sheet + Drive folder to live in).
+   the Google account that owns the target Sheet + Drive folder).
 2. Delete the placeholder `myFunction() {}` code.
 3. Paste in the entire contents of `code.gs`.
-4. Rename the project (top left, "Untitled project") to something like
+4. (Optional) Point it at your own Sheet/folder — see
+   [Changing the target Sheet or folder](#changing-the-target-sheet-or-folder)
+   below. Out of the box it's already bound to the project's Sheet + folder.
+5. Rename the project (top left, "Untitled project") to something like
    `Business Verification Backend`.
-5. Click **Run** (▶) with `doGet` selected in the function dropdown.
+6. Click **Run** (▶) with `doGet` selected in the function dropdown.
    - Google will ask you to authorize the script — click **Review
      permissions**, choose your account, click **Advanced > Go to
      [project name] (unsafe)** (this warning is normal for your own
      scripts), then **Allow**.
-   - This first run creates the Sheet and Drive folder in your account.
-6. Click **Deploy > New deployment**.
+   - This first run **initialises**: it writes the header row into the Sheet
+     (if empty) and resolves the photos folder.
+7. Click **Deploy > New deployment**.
    - Click the gear icon next to "Select type" and choose **Web app**.
    - Description: anything, e.g. "v1"
    - Execute as: **Me**
    - Who has access: **Anyone**
    - Click **Deploy**.
-7. Copy the **Web app URL** it gives you (looks like
+8. Copy the **Web app URL** it gives you (looks like
    `https://script.google.com/macros/s/XXXXXXXX/exec`).
 
 Test it: paste that URL into a browser tab. You should see
-`{"status":"ok","message":"Verification report backend is live."}`.
+`{"status":"ok","message":"Verification report backend is live.","init":"ok"}`.
+An `"init"` value other than `"ok"` means the Sheet/folder couldn't be
+reached — check the IDs at the top of `code.gs`.
 
-Check your Google Drive — you should now see:
-- A Sheet named **Business Verification Reports**
-- A folder named **Business Verification Photos**
+Open the Sheet — it should now have the frozen header row across all 22
+columns (S/N … Submitted At).
+
+> **Note:** After editing `code.gs` you must **redeploy** for changes to take
+> effect: **Deploy > Manage deployments > Edit (pencil) > Version: New
+> version > Deploy**. Re-running `doGet` alone updates the Sheet but not the
+> live Web App.
+
+### Changing the target Sheet or folder
+
+At the top of `code.gs`:
+
+```js
+const SHEET_ID  = '...';   // the Google Sheet to write rows into
+const FOLDER_ID = '...';   // the Drive folder to store photos in
+```
+
+- The Sheet **must be a native Google Sheet** — an uploaded `.xlsx` will not
+  work (Apps Script can only write to native Sheets; convert via
+  *File > Save as Google Sheets* first).
+- Set either ID to `''` to fall back to auto-create-by-name using
+  `SHEET_NAME` / `FOLDER_NAME`.
 
 ---
 
@@ -52,7 +80,7 @@ Check your Google Drive — you should now see:
      SCRIPT_URL: "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE"
    };
    ```
-3. Replace the placeholder with the Web app URL from step 1.7.
+3. Replace the placeholder with the Web app URL from step 1.8.
 
 ---
 
@@ -82,7 +110,7 @@ favicon just won't show anything.
 ## 5. Test end-to-end
 
 1. Open the GitHub Pages link on a phone.
-2. Fill in the form, capture a photo or two, submit.
+2. Fill in the form, capture **all six photos** (they're required), submit.
 3. Check the Google Sheet — a new row should appear within a few seconds,
    with photo links pointing into the Drive folder.
 
@@ -92,10 +120,11 @@ favicon just won't show anything.
 
 - **S/N** is auto-assigned as the next Sheet row number — no manual ID
   needed.
-- **Photos** are compressed client-side (max 1280px, JPEG ~70% quality)
-  before upload, to keep things fast on weaker field connections, then
-  uploaded to the Drive folder with "anyone with the link can view" sharing
-  so the links work directly from the Sheet.
+- **Photos** — all six are **required**. The form won't submit until every
+  slot is filled; empty slots are flagged and it scrolls to the first one.
+  Each photo is compressed client-side (max 1280px, JPEG ~72% quality)
+  before upload, then stored in the Drive folder with "anyone with the link
+  can view" sharing so the links work directly from the Sheet.
 - **Geolocation** is captured silently in the background (no UI shown to
   the collector) and stored in the Sheet as Latitude / Longitude / Accuracy
   columns.
@@ -103,6 +132,18 @@ favicon just won't show anything.
   collector, not auto-stamped.
 - **Region / District** are both dropdowns; District is dependent on the
   selected Region and covers all 16 regions and 261 districts of Ghana.
+- **Submitted At** is stamped server-side when the row is written.
+- Free-text values that begin with `=`, `+`, `-` or `@` are stored as
+  literal text (guards against spreadsheet formula injection).
+
+## UI notes
+
+- Mobile-first single-column layout; on tablet/desktop the cards flow into
+  two columns and the layout widens and centres.
+- The **Submit** button is a sticky bottom bar for easy thumb reach, with
+  safe-area padding for notched phones.
+- Pinch-zoom is allowed and inputs render at 16px so mobile browsers don't
+  force-zoom on focus.
 
 ## Known limitations of this MVP
 
@@ -113,6 +154,6 @@ favicon just won't show anything.
   routes through Apps Script's request size limits (~50MB per request,
   well above what 6 compressed photos need — but worth knowing if you
   later raise the compression quality).
-- If two collectors submit in the exact same second, Apps Script serializes
-  requests, so no data is lost, but there can be a short queue under heavy
-  simultaneous use.
+- Concurrent submissions are serialised with a script lock, so two
+  collectors submitting at the same moment get sequential S/N values with no
+  data loss — but under heavy simultaneous use there can be a short queue.

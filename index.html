@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Business Verification Report</title>
+<!--
+  FAVICON: place the official Mastercard Foundation favicon file next to this
+  HTML file, named "favicon.ico" (or edit the href below to match your file,
+  e.g. "favicon.png"). Use the real asset from their brand-assets page —
+  this file intentionally does not draw the logo itself.
+-->
+<link rel="icon" href="favicon.ico">
+<style>
+  :root{
+    --ink:#14231d;
+    --paper:#f6f4ee;
+    --card:#ffffff;
+    --line:#dedad0;
+    --accent:#0b5fff;
+    --accent-dark:#0a3ea3;
+    --warn:#b8562f;
+    --ok:#0b5fff;
+    --muted:#6b675e;
+    --radius:12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    background:var(--accent-dark);
+    color:#fff;
+    padding:18px 20px 22px;
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  header h1{
+    margin:0;
+    font-size:1.15rem;
+    font-weight:700;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:4px 0 0;
+    font-size:0.82rem;
+    opacity:0.85;
+  }
+  .header-top{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .header-top img{
+    height:28px;
+    width:auto;
+    display:block;
+    /* hides gracefully if logo.png hasn't been added yet */
+  }
+  .header-top img:not([src]), .header-top img[src=""]{
+    display:none;
+  }
+  main{
+    max-width:520px;
+    margin:0 auto;
+    padding:18px 16px 0;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+    break-inside:avoid;        /* don't split a card across desktop columns */
+  }
+  .card h2{
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--accent);
+    margin:0 0 12px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .card h2 .n{
+    background:var(--accent);
+    color:#fff;
+    width:18px;height:18px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.68rem;
+  }
+  label{
+    display:block;
+    font-size:0.82rem;
+    font-weight:600;
+    margin:12px 0 5px;
+  }
+  label:first-of-type{margin-top:0;}
+  .req{color:var(--warn);}
+  input[type=text], input[type=tel], input[type=date], select, textarea{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:16px;            /* 16px min avoids iOS zoom-on-focus */
+    line-height:1.3;
+    background:#fff;
+    color:var(--ink);
+    font-family:inherit;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+  input[type=date]{
+    min-height:44px;           /* keeps native date control tap-friendly */
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  textarea{resize:vertical; min-height:80px;}
+  .hint{font-size:0.72rem; color:var(--muted); margin-top:4px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+  .readonly-field{
+    padding:11px 12px;
+    border-radius:8px;
+    background:#f0ede4;
+    border:1px dashed var(--line);
+    font-size:0.9rem;
+    color:var(--muted);
+  }
+
+  .photo-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    margin-top:10px;
+  }
+  .photo-slot{
+    aspect-ratio:1/1;
+    border:1.5px dashed var(--line);
+    border-radius:10px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    color:var(--muted);
+    font-size:0.68rem;
+    position:relative;
+    overflow:hidden;
+    background:#faf9f5;
+    cursor:pointer;
+  }
+  .photo-slot.missing{
+    border-color:var(--warn);
+    background:#fbece5;
+    color:var(--warn);
+  }
+  .photo-slot input{
+    position:absolute;
+    inset:0;
+    opacity:0;
+    cursor:pointer;
+  }
+  .photo-slot img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .photo-slot .badge{
+    position:absolute;
+    top:4px;
+    left:4px;
+    background:var(--accent-dark);
+    color:#fff;
+    font-size:0.6rem;
+    padding:2px 5px;
+    border-radius:4px;
+    z-index:2;
+  }
+  .photo-slot .check{
+    position:absolute;
+    top:4px;
+    right:4px;
+    background:var(--ok);
+    color:#fff;
+    width:16px;height:16px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.6rem;
+    z-index:2;
+  }
+  .cam-icon{font-size:1.3rem;}
+
+  .status-toggle{
+    display:flex;
+    gap:8px;
+    margin-top:6px;
+  }
+  .status-toggle input{display:none;}
+  .status-toggle label{
+    flex:1;
+    text-align:center;
+    padding:11px 8px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    font-size:0.85rem;
+    font-weight:600;
+    margin:0;
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .status-toggle input:checked + label{
+    border-color:var(--ok);
+    background:#e7f0ff;
+    color:var(--accent-dark);
+  }
+  .status-toggle input#statusNot:checked + label{
+    border-color:var(--warn);
+    background:#fbece5;
+    color:var(--warn);
+  }
+
+  .submit-bar{
+    position:sticky;
+    bottom:0;
+    margin:8px -16px 0;        /* bleed to the edges of <main>'s padding */
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    background:rgba(246,244,238,0.92);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    border-top:1px solid var(--line);
+    z-index:9;
+  }
+  button.submit{
+    width:100%;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:15px;
+    border-radius:10px;
+    font-size:1rem;
+    font-weight:700;
+    letter-spacing:0.2px;
+  }
+  button.submit:active{background:var(--accent-dark);}
+  .note{
+    text-align:center;
+    font-size:0.72rem;
+    color:var(--muted);
+    margin:10px 0 0;
+  }
+
+  /* success overlay */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(20,35,29,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:100;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:#fff;
+    border-radius:16px;
+    max-width:440px;
+    width:100%;
+    max-height:85vh;
+    overflow-y:auto;
+    padding:20px;
+  }
+  .sheet h3{margin:0 0 4px; font-size:1.05rem;}
+  .sheet .sub{color:var(--muted); font-size:0.82rem; margin-bottom:14px;}
+  .kv{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:6px 12px;
+    font-size:0.82rem;
+    margin-bottom:14px;
+  }
+  .kv div:nth-child(odd){color:var(--muted);}
+  .kv div:nth-child(even){font-weight:600; word-break:break-word;}
+  .sheet button{
+    width:100%;
+    padding:12px;
+    border-radius:8px;
+    border:none;
+    background:var(--accent);
+    color:#fff;
+    font-weight:700;
+    font-size:0.92rem;
+  }
+  .proto-flag{
+    background:#fff4e0;
+    border:1px solid #edcf98;
+    color:#7a5314;
+    font-size:0.74rem;
+    border-radius:8px;
+    padding:8px 10px;
+    margin-bottom:14px;
+    line-height:1.4;
+  }
+
+  /* ---- Tablet / desktop: flow the cards into two balanced columns ---- */
+  @media (min-width:760px){
+    header{ padding:20px 24px 24px; }
+    header h1{ font-size:1.3rem; }
+    main{
+      max-width:860px;
+      padding:22px 20px 0;
+    }
+    #vform{
+      column-count:2;
+      column-gap:18px;
+    }
+    .submit-bar{
+      margin:12px -20px 0;
+      padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+    }
+    button.submit{
+      max-width:320px;
+      margin:0 auto;
+      display:block;
+    }
+  }
+
+  /* Respect users who prefer no motion (e.g. the submit scroll-into-view) */
+  @media (prefers-reduced-motion:reduce){
+    *{ scroll-behavior:auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <!--
+      LOGO: place the official Mastercard Foundation logo file next to this
+      HTML file, named "logo.png" (transparent background recommended).
+      This markup intentionally does not draw the logo itself.
+    -->
+    <img src="logo.png" alt="Mastercard Foundation" onerror="this.style.display='none'">
+    <h1>Business Verification Report</h1>
+  </div>
+  <p>Field data collection — Ghana &nbsp;•&nbsp; Mastercard Foundation Associate</p>
+</header>
+
+<main>
+
+  <form id="vform">
+
+    <div class="card">
+      <h2><span class="n">1</span>Business Owner</h2>
+
+      <label>Business Owner Name <span class="req">*</span></label>
+      <input type="text" id="ownerName" required placeholder="e.g. Ama Boateng">
+
+      <label>Phone Number</label>
+      <input type="tel" id="phone" placeholder="e.g. 024 123 4567">
+    </div>
+
+    <div class="card">
+      <h2><span class="n">2</span>Business Details</h2>
+
+      <label>Business Name <span class="req">*</span></label>
+      <input type="text" id="businessName" required placeholder="e.g. Ama's Provisions Store">
+
+      <label>Business Type <span class="req">*</span></label>
+      <input type="text" id="businessType" required placeholder="e.g. Retail / Trading / Food vendor">
+
+      <label>Street Name <span class="req">*</span></label>
+      <input type="text" id="streetName" required placeholder="e.g. Spintex Road">
+
+      <div class="row2">
+        <div>
+          <label>Region <span class="req">*</span></label>
+          <select id="region" required>
+            <option value="" disabled selected>Select region</option>
+          </select>
+        </div>
+        <div>
+          <label>District <span class="req">*</span></label>
+          <select id="district" required disabled>
+            <option value="" disabled selected>Select region first</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">3</span>Photos (live camera capture) <span class="req">*</span></h2>
+      <div class="photo-grid" id="photoGrid"></div>
+      <p class="hint">Tap each tile to open the camera. <strong>All six photos are required.</strong></p>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">4</span>Verification</h2>
+
+      <label>Verification Status <span class="req">*</span></label>
+      <div class="status-toggle">
+        <input type="radio" name="status" id="statusDone" value="Completed" checked>
+        <label for="statusDone">Completed</label>
+        <input type="radio" name="status" id="statusNot" value="Not completed">
+        <label for="statusNot">Not completed</label>
+      </div>
+
+      <label>Detailed Observations</label>
+      <textarea id="observations" placeholder="Staff strength observed, security, conduciveness of the premises…"></textarea>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">5</span>Dates</h2>
+
+      <label>Requested Date <span class="req">*</span></label>
+      <input type="date" id="requestedDate" required>
+
+      <label>Completed Date <span class="req">*</span></label>
+      <input type="date" id="completedDate" required>
+    </div>
+
+  </form>
+
+  <div class="submit-bar">
+    <button class="submit" type="submit" form="vform">Submit Report</button>
+    <p class="note">S/N and photo links are assigned automatically by the Google Sheet.</p>
+  </div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <h3 id="overlayTitle">Submitting…</h3>
+    <div class="sub" id="overlaySub">Sending your report to the Google Sheet.</div>
+    <div class="kv" id="summaryKv"></div>
+    <button id="closeOverlay">Close</button>
+  </div>
+</div>
+
+<script>
+// ⚠️ SET THIS after deploying code.gs as a Web App (see README.md).
+const CONFIG = {
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbymz-dPf0buXedR7sXCXXA80MV25ycHhWn_cBES-oMXwSHfMlxOGB1qXo9q77RL1DUp/exec"
+};
+
+const GHANA_REGIONS_DISTRICTS = {
+  "Ahafo": ["Asunafo North","Asunafo South","Asutifi North","Asutifi South","Tano North","Tano South"],
+  "Ashanti": ["Adansi Asokwa","Adansi North","Adansi South","Afigya-Kwabre North","Afigya-Kwabre South","Ahafo-Ano North","Ahafo-Ano South East","Ahafo-Ano South West","Akrofuom","Amansie Central","Amansie West","Amansie South","Asante-Akim Central","Asante-Akim North","Asante-Akim South","Asokore-Mampong","Asokwa","Atwima-Kwanwoma","Atwima-Mponua","Atwima-Nwabiagya","Atwima-Nwabiagya North","Bekwai","Bosome Freho","Bosomtwe","Ejisu","Ejura/Sekyedumase","Juaben","Kumasi","Kwabre East","Kwadaso","Mampong","Obuasi East","Obuasi","Offinso","Offinso North","Oforikrom","Old Tafo","Sekyere Afram Plains","Sekyere Central","Sekyere East","Sekyere Kumawu","Sekyere South","Suame"],
+  "Bono": ["Banda","Berekum East","Berekum West","Dormaa Central","Dormaa East","Dormaa West","Jaman North","Jaman South","Sunyani","Sunyani West","Tain","Wenchi"],
+  "Bono East": ["Atebubu-Amantin","Kintampo North","Kintampo South","Nkoranza North","Nkoranza South","Pru East","Pru West","Sene East","Sene West","Techiman","Techiman North"],
+  "Central": ["Abura/Asebu/Kwamankese","Agona East","Agona West Municipal","Ajumako/Enyan/Essiam","Asikuma Odoben Brakwa","Assin Central","Assin North","Assin South","Awutu Senya East","Awutu Senya West","Cape Coast","Effutu","Ekumfi","Gomoa East","Gomoa Central","Gomoa West","Komenda/Edina/Eguafo/Abirem","Mfantsiman","Twifo Atti Morkwa","Twifo/Hemang/Lower Denkyira","Upper Denkyira East","Upper Denkyira West"],
+  "Eastern": ["Abuakwa North","Abuakwa South","Achiase","Akuapim North","Akuapim South","Akyemansa","Asene Manso Akroso","Asuogyaman","Atiwa East","Atiwa West","Ayensuano","Birim Central","Birim North","Birim South","Denkyembour","Fanteakwa North","Fanteakwa South","Kwaebibirem","Kwahu Afram Plains North","Kwahu Afram Plains South","Kwahu East","Kwahu South","Kwahu West","Lower Manya Krobo","New Juaben North","New Juaben South","Nsawam Adoagyire","Okere","Suhum","Upper Manya Krobo","Upper West Akim","West Akim","Yilo-Krobo"],
+  "Greater Accra": ["Ablekuma Central","Ablekuma North","Ablekuma West","Accra","Ada East","Ada West","Adenta","Ashaiman","Ayawaso Central","Ayawaso East","Ayawaso North","Ayawaso West","Ga Central","Ga East","Ga North","Ga South","Ga West","Korle-Klottey","Kpone-Katamanso","Krowor","La-Dade-Kotopon","La-Nkwantanang-Madina","Ledzokuku","Ningo-Prampram","Okaikwei North","Shai-Osudoku","Tema Metropolitan","Tema West","Weija Gbawe"],
+  "Northern": ["Gushegu","Karaga","Kpandai","Kumbungu","Mion","Nanton","Nanumba North","Nanumba South","Saboba","Sagnarigu","Savelugu","Tamale Metropolitan","Tatale Sanguli","Tolon","Yendi","Zabzugu"],
+  "North East": ["Bunkpurugu Nyankpanduri","Chereponi","East Mamprusi","Mamprugu Moagduri","West Mamprusi","Yunyoo-Nasuan"],
+  "Oti": ["Biakoye","Guan","Jasikan","Kadjebi","Krachi East","Krachi Nchumuru","Krachi West","Nkwanta North","Nkwanta South"],
+  "Savannah": ["Bole","Central Gonja","East Gonja Municipal","North Gonja","North East Gonja","Sawla-Tuna-Kalba","West Gonja"],
+  "Upper East": ["Bawku Municipal","Bawku West","Binduri","Bolgatanga East","Bolgatanga Municipal","Bongo","Builsa North Municipal","Builsa South","Garu","Kassena-Nankana Municipal","Kassena-Nankana West","Nabdam","Pusiga","Talensi","Tempane"],
+  "Upper West": ["Daffiama Bussie Issa","Jirapa Municipal","Lambussie Karni","Lawra Municipal","Nadowli-Kaleo","Nandom Municipal","Sissala East Municipal","Sissala West","Wa East","Wa Municipal","Wa West"],
+  "Volta": ["Adaklu","Afadzato South","Agotime Ziope","Akatsi North","Akatsi South","Anloga","Central Tongu","Ho Municipal","Ho West","Hohoe Municipal","Keta Municipal","Ketu North Municipal","Ketu South Municipal","Kpando Municipal","North Dayi","North Tongu","South Dayi","South Tongu"],
+  "Western": ["Ahanta West","Amenfi Central","Amenfi West","Effia Kwesimintsim Municipal","Ellembelle","Jomoro","Mpohor","Nzema East Municipal","Prestea-Huni Valley Municipal","Sekondi Takoradi Metropolitan","Shama","Tarkwa-Nsuaem Municipal","Wassa Amenfi East","Wassa East"],
+  "Western North": ["Aowin","Bia East","Bia West","Bibiani Anhwiaso Bekwai","Bodi","Juaboso","Sefwi Akontombra","Sefwi-Wiawso","Suaman"]
+};
+
+const regionSelect = document.getElementById('region');
+const districtSelect = document.getElementById('district');
+
+Object.keys(GHANA_REGIONS_DISTRICTS).forEach(r=>{
+  const opt = document.createElement('option');
+  opt.value = r; opt.textContent = r;
+  regionSelect.appendChild(opt);
+});
+
+regionSelect.addEventListener('change', ()=>{
+  const districts = GHANA_REGIONS_DISTRICTS[regionSelect.value] || [];
+  districtSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = ''; placeholder.disabled = true; placeholder.selected = true;
+  placeholder.textContent = districts.length ? 'Select district' : 'Select region first';
+  districtSelect.appendChild(placeholder);
+  districts.forEach(d=>{
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    districtSelect.appendChild(opt);
+  });
+  districtSelect.disabled = districts.length === 0;
+});
+
+// --- Geolocation (silent — no UI shown to the collector) ---
+// Captured in the background on load and refreshed right before submit,
+// so the payload always carries the freshest fix without the collector
+// seeing or interacting with any location UI.
+let lastPosition = null;
+let geoErrorNote = null;
+
+function captureLocation(){
+  if(!navigator.geolocation){
+    geoErrorNote = 'Geolocation not supported on this device';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos=>{ lastPosition = pos; geoErrorNote = null; },
+    err=>{ geoErrorNote = err.message || 'permission denied'; },
+    { enableHighAccuracy:true, timeout:12000, maximumAge:0 }
+  );
+}
+captureLocation();
+
+// --- Photo slots (compressed before storing, to keep uploads small on
+// field data connections — resized to max 1280px, re-encoded as JPEG) ---
+const photoGrid = document.getElementById('photoGrid');
+const photoData = {};
+
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = ev=>{ img.src = ev.target.result; };
+    reader.onerror = reject;
+    img.onload = ()=>{
+      let { width, height } = img;
+      if(width > height && width > maxDim){
+        height = Math.round(height * (maxDim / width));
+        width = maxDim;
+      } else if(height > maxDim){
+        width = Math.round(width * (maxDim / height));
+        height = maxDim;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+for(let i=1;i<=6;i++){
+  const slot = document.createElement('label');
+  slot.className = 'photo-slot';
+  slot.innerHTML = `
+    <span class="badge">Photo ${i}</span>
+    <span class="cam-icon">📷</span>
+    <span>Tap to capture</span>
+    <input type="file" accept="image/*" capture="environment" data-idx="${i}">
+  `;
+  const input = slot.querySelector('input');
+  input.addEventListener('change', async e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const compressedDataUrl = await compressImage(file, 1280, 0.72);
+    photoData[i] = compressedDataUrl;
+    slot.classList.remove('missing');
+    let img = slot.querySelector('img');
+    if(!img){
+      img = document.createElement('img');
+      slot.appendChild(img);
+      const check = document.createElement('span');
+      check.className = 'check';
+      check.textContent = '✓';
+      slot.appendChild(check);
+    }
+    img.src = compressedDataUrl;
+  });
+  photoGrid.appendChild(slot);
+}
+
+// --- Submit ---
+const submitBtn = document.querySelector('button.submit');
+
+document.getElementById('vform').addEventListener('submit', async function(e){
+  e.preventDefault();
+
+  // All six photos are compulsory. Flag every empty slot, then stop.
+  const slots = photoGrid.querySelectorAll('.photo-slot');
+  let missingCount = 0;
+  slots.forEach((slot, idx)=>{
+    if(!photoData[idx + 1]){
+      slot.classList.add('missing');
+      missingCount++;
+    }
+  });
+  if(missingCount > 0){
+    const firstMissing = photoGrid.querySelector('.photo-slot.missing');
+    if(firstMissing){
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      firstMissing.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block:'center' });
+    }
+    document.getElementById('overlayTitle').textContent = '📷 All six photos required';
+    document.getElementById('overlaySub').textContent =
+      `Please capture the remaining ${missingCount} photo${missingCount > 1 ? 's' : ''} before submitting.`;
+    document.getElementById('summaryKv').innerHTML = '';
+    document.getElementById('overlay').classList.add('show');
+    return;
+  }
+
+  const payload = {
+    ownerName: document.getElementById('ownerName').value,
+    phone: document.getElementById('phone').value,
+    businessName: document.getElementById('businessName').value,
+    businessType: document.getElementById('businessType').value,
+    streetName: document.getElementById('streetName').value,
+    region: document.getElementById('region').value,
+    district: document.getElementById('district').value,
+    verificationStatus: document.querySelector('input[name=status]:checked').value,
+    observations: document.getElementById('observations').value,
+    requestedDate: document.getElementById('requestedDate').value,
+    completedDate: document.getElementById('completedDate').value,
+    latitude: lastPosition ? lastPosition.coords.latitude.toFixed(6) : null,
+    longitude: lastPosition ? lastPosition.coords.longitude.toFixed(6) : null,
+    accuracyMeters: lastPosition ? Math.round(lastPosition.coords.accuracy) : null,
+    photo1: photoData[1] || '', photo2: photoData[2] || '', photo3: photoData[3] || '',
+    photo4: photoData[4] || '', photo5: photoData[5] || '', photo6: photoData[6] || '',
+  };
+
+  // On-screen summary — geolocation intentionally omitted (captured silently,
+  // never shown to the collector).
+  const kv = document.getElementById('summaryKv');
+  kv.innerHTML = '';
+  const labels = {
+    ownerName:'Owner name', phone:'Phone', businessName:'Business name',
+    businessType:'Business type', streetName:'Street', region:'Region',
+    district:'District', verificationStatus:'Status', observations:'Observations',
+    requestedDate:'Requested', completedDate:'Completed'
+  };
+  Object.keys(labels).forEach(k=>{
+    const d1 = document.createElement('div'); d1.textContent = labels[k];
+    const d2 = document.createElement('div'); d2.textContent = (payload[k]===null||payload[k]==='') ? '—' : payload[k];
+    kv.appendChild(d1); kv.appendChild(d2);
+  });
+
+  document.getElementById('overlayTitle').textContent = 'Submitting…';
+  document.getElementById('overlaySub').textContent = 'Sending your report to the Google Sheet.';
+  document.getElementById('overlay').classList.add('show');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting…';
+
+  if(CONFIG.SCRIPT_URL.startsWith('PASTE_')){
+    document.getElementById('overlayTitle').textContent = '⚠️ Backend not connected yet';
+    document.getElementById('overlaySub').textContent = 'Set CONFIG.SCRIPT_URL in index.html to your deployed Apps Script Web App URL — see README.md.';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Report';
+    return;
+  }
+
+  try {
+    // text/plain avoids a CORS preflight against Apps Script; the script
+    // still parses e.postData.contents as JSON.
+    const res = await fetch(CONFIG.SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if(result.status === 'ok'){
+      document.getElementById('overlayTitle').textContent = '✅ Submitted';
+      document.getElementById('overlaySub').textContent = `Saved as row S/N ${result.sn} in the Google Sheet.`;
+      document.getElementById('vform').reset();
+      Object.keys(photoData).forEach(k=>delete photoData[k]);
+      document.querySelectorAll('.photo-slot img').forEach(img=>img.remove());
+      document.querySelectorAll('.photo-slot .check').forEach(c=>c.remove());
+      districtSelect.innerHTML = '<option value="" disabled selected>Select region first</option>';
+      districtSelect.disabled = true;
+    } else {
+      throw new Error(result.message || 'Unknown error');
+    }
+  } catch (err) {
+    document.getElementById('overlayTitle').textContent = '❌ Submission failed';
+    document.getElementById('overlaySub').textContent = err.message + ' — your entries are still filled in, just retry.';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Report';
+  }
+});
+
+document.getElementById('closeOverlay').addEventListener('click', ()=>{
+  document.getElementById('overlay').classList.remove('show');
+});
+</script>
+
+</body>
+</html>
